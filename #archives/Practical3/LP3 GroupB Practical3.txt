@@ -1,0 +1,211 @@
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+df = pd.read_csv('Churn_Modelling.csv')
+
+## Data Preprocessing
+df.head()
+RowNumber	CustomerId	Surname	CreditScore	Geography	Gender	Age	Tenure	Balance	NumOfProducts	HasCrCard	IsActiveMember	EstimatedSalary	Exited
+0	1	15634602	Hargrave	619	France	Female	42	2	0.00	1	1	1	101348.88	1
+1	2	15647311	Hill	608	Spain	Female	41	1	83807.86	1	0	1	112542.58	0
+2	3	15619304	Onio	502	France	Female	42	8	159660.80	3	1	0	113931.57	1
+3	4	15701354	Boni	699	France	Female	39	1	0.00	2	0	0	93826.63	0
+4	5	15737888	Mitchell	850	Spain	Female	43	2	125510.82	1	1	1	79084.10	0
+
+df.shape
+(10000, 14)
+
+df.isnull()
+	RowNumber	CustomerId	Surname	CreditScore	Geography	Gender	Age	Tenure	Balance	NumOfProducts	HasCrCard	IsActiveMember	EstimatedSalary	Exited
+0	False	False	False	False	False	False	False	False	False	False	False	False	False	False
+1	False	False	False	False	False	False	False	False	False	False	False	False	False	False
+2	False	False	False	False	False	False	False	False	False	False	False	False	False	False
+3	False	False	False	False	False	False	False	False	False	False	False	False	False	False
+4	False	False	False	False	False	False	False	False	False	False	False	False	False	False
+...	...	...	...	...	...	...	...	...	...	...	...	...	...	...
+9995	False	False	False	False	False	False	False	False	False	False	False	False	False	False
+9996	False	False	False	False	False	False	False	False	False	False	False	False	False	False
+9997	False	False	False	False	False	False	False	False	False	False	False	False	False	False
+9998	False	False	False	False	False	False	False	False	False	False	False	False	False	False
+9999	False	False	False	False	False	False	False	False	False	False	False	False	False	False
+10000 rows × 14 columns
+
+df.isnull().sum()
+RowNumber          0
+CustomerId         0
+Surname            0
+CreditScore        0
+Geography          0
+Gender             0
+Age                0
+Tenure             0
+Balance            0
+NumOfProducts      0
+HasCrCard          0
+IsActiveMember     0
+EstimatedSalary    0
+Exited             0
+dtype: int64
+
+df.info()
+<class 'pandas.core.frame.DataFrame'>
+RangeIndex: 10000 entries, 0 to 9999
+Data columns (total 14 columns):
+ #   Column           Non-Null Count  Dtype  
+---  ------           --------------  -----  
+ 0   RowNumber        10000 non-null  int64  
+ 1   CustomerId       10000 non-null  int64  
+ 2   Surname          10000 non-null  object 
+ 3   CreditScore      10000 non-null  int64  
+ 4   Geography        10000 non-null  object 
+ 5   Gender           10000 non-null  object 
+ 6   Age              10000 non-null  int64  
+ 7   Tenure           10000 non-null  int64  
+ 8   Balance          10000 non-null  float64
+ 9   NumOfProducts    10000 non-null  int64  
+ 10  HasCrCard        10000 non-null  int64  
+ 11  IsActiveMember   10000 non-null  int64  
+ 12  EstimatedSalary  10000 non-null  float64
+ 13  Exited           10000 non-null  int64  
+dtypes: float64(2), int64(9), object(3)
+memory usage: 1.1+ MB
+
+df.dtypes
+RowNumber            int64
+CustomerId           int64
+Surname             object
+CreditScore          int64
+Geography           object
+Gender              object
+Age                  int64
+Tenure               int64
+Balance            float64
+NumOfProducts        int64
+HasCrCard            int64
+IsActiveMember       int64
+EstimatedSalary    float64
+Exited               int64
+dtype: object
+
+df.columns
+Index(['RowNumber', 'CustomerId', 'Surname', 'CreditScore', 'Geography',
+       'Gender', 'Age', 'Tenure', 'Balance', 'NumOfProducts', 'HasCrCard',
+       'IsActiveMember', 'EstimatedSalary', 'Exited'],
+      dtype='object')
+
+df = df.drop(['RowNumber', 'Surname', 'CustomerId'], axis=1)
+
+## Data Visualization
+def visualization(x, y, xlabel):
+  plt.figure(figsize=(10, 5))
+  plt.hist([x, y], color=['red', 'green'], label=['exit', 'not_exit'])
+  plt.xlabel(xlabel, fontsize=20)
+  plt.ylabel("No. of customers", fontsize=20)
+  plt.legend()
+
+df_churn_exited = df[df['Exited']==1]['Tenure']
+df_churn_not_exited = df[df['Exited']==0]['Tenure']
+
+visualization(df_churn_exited, df_churn_not_exited, 'Tenure')
+## Output - Image
+
+df_churn_exited2 = df[df['Exited']==1]['Age']
+df_churn_not_exited2 = df[df['Exited']==0]['Age']
+
+visualization(df_churn_exited2, df_churn_not_exited2, 'Age')
+## Output - Image
+
+## Converting the Categorical Variables
+X = df[['CreditScore','Gender','Age','Tenure','Balance','NumOfProducts','HasCrCard','IsActiveMember','EstimatedSalary']]
+states = pd.get_dummies(df['Geography'],drop_first = True)
+gender = pd.get_dummies(df['Gender'],drop_first = True)
+
+df = pd.concat([df,gender,states], axis = 1)
+
+## Splitting the dataset into training and testing dataset
+df.head()
+	CreditScore	Geography	Gender	Age	Tenure	Balance	NumOfProducts	HasCrCard	IsActiveMember	EstimatedSalary	Exited	Male	Germany	Spain
+0	619	France	Female	42	2	0.00	1	1	1	101348.88	1	False	False	False
+1	608	Spain	Female	41	1	83807.86	1	0	1	112542.58	0	False	False	True
+2	502	France	Female	42	8	159660.80	3	1	0	113931.57	1	False	False	False
+3	699	France	Female	39	1	0.00	2	0	0	93826.63	0	False	False	False
+4	850	Spain	Female	43	2	125510.82	1	1	1	79084.10	0	False	False	True
+
+X = df[['CreditScore', 'Age', 'Tenure', 'Balance', 'NumOfProducts', 'HasCrCard', 'IsActiveMember', 'EstimatedSalary', 'Male', 'Germany', 'Spain']]
+y = df['Exited']
+
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.30)
+
+## Normalizing the values with mean as 0 and Standard Deviation as 1
+from sklearn.preprocessing import StandardScaler
+sc = StandardScaler()
+
+X_train = sc.fit_transform(X_train)
+X_test = sc.fit_transform(X_test)
+
+X_train
+array([[-0.30190363, -0.84750735, -1.04085081, ..., -1.09066618,
+         1.72613262, -0.56547208],
+       [-0.64225187,  0.85360977, -1.38684547, ..., -1.09066618,
+         1.72613262, -0.56547208],
+       [-1.4260842 ,  0.66459676, -0.69485614, ..., -1.09066618,
+        -0.57932976,  1.76843391],
+       ...,
+       [ 1.78144018, -0.1859618 , -0.00286681, ...,  0.91687083,
+        -0.57932976, -0.56547208],
+       [ 1.2760746 ,  1.2316358 , -1.04085081, ..., -1.09066618,
+        -0.57932976, -0.56547208],
+       [-0.41535304,  0.57009025, -0.69485614, ..., -1.09066618,
+        -0.57932976,  1.76843391]])
+
+X_test
+array([[ 1.1976404 , -0.46909188,  0.33722052, ..., -1.10852431,
+         1.73205081, -0.59326246],
+       [ 1.15593728, -0.27423234, -0.00805646, ...,  0.9021002 ,
+        -0.57735027, -0.59326246],
+       [ 0.85358972, -0.37166211,  1.02777448, ...,  0.9021002 ,
+        -0.57735027,  1.68559461],
+       ...,
+       [ 1.32274973, -0.95624075,  0.6824975 , ..., -1.10852431,
+         1.73205081, -0.59326246],
+       [ 0.3427266 , -0.37166211, -0.69861042, ...,  0.9021002 ,
+        -0.57735027, -0.59326246],
+       [-1.2211401 , -0.46909188, -0.00805646, ...,  0.9021002 ,
+        -0.57735027,  1.68559461]])
+
+# Building the Classifier Model using Keras 
+import keras
+from keras.models import Sequential #To create sequential neural network
+from keras.layers import Dense #To create hidden layers
+classifier = Sequential()
+classifier.add(Dense(activation = "relu",input_dim = 11,units = 6,kernel_initializer = "uniform")) 
+classifier.add(Dense(activation = "relu",units = 6,kernel_initializer = "uniform"))
+classifier.add(Dense(activation = "sigmoid",units = 1,kernel_initializer = "uniform")) #Final neuron will be having siigmoid function
+classifier.compile(optimizer="adam",loss = 'binary_crossentropy',metrics = ['accuracy']) #To compile the Artificial Neural Network. Ussed Binary crossentropy as we just have only two output
+classifier.summary() #3 layers created. 6 neurons in 1st,6neurons in 2nd layer and 1 neuron in last
+classifier.fit(X_train,y_train,batch_size=10,epochs=50) #Fitting the ANN to training dataset
+y_pred =classifier.predict(X_test)
+y_pred = (y_pred > 0.5) #Predicting the result
+
+from sklearn.metrics import confusion_matrix,accuracy_score,classification_report
+cm = confusion_matrix(y_test,y_pred)
+
+cm
+array([[2328,   72],
+       [ 425,  175]], dtype=int64)
+
+accuracy = accuracy_score(y_test,y_pred)
+accuracy
+0.8343333333333334
+
+print(classification_report(y_test,y_pred))
+        precision    recall  f1-score   support
+
+           0       0.85      0.97      0.90      2400
+           1       0.71      0.29      0.41       600
+
+    accuracy                           0.83      3000
+   macro avg       0.78      0.63      0.66      3000
+weighted avg       0.82      0.83      0.81      3000
